@@ -1,53 +1,38 @@
-import {Controller,Get,Post,Delete,Put,Patch,Param,} from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Put,
+  Patch,
+  Param,
+  Body,
+} from '@nestjs/common';
+
+import { BooksService } from './books.service.js';
+import { createBookDto } from './dto/create-book-dto.js';
 
 @Controller('books')
 export class BooksController {
+  constructor(private readonly booksService: BooksService) {}
 
   // GET /books
   @Get()
   getBooks() {
-    return [
-      { title: 'Semua data buku' }
-    ];
+    return this.booksService.findAll();
   }
 
   // POST /books
   @Post()
-  createBook() {
-    return {
-      message: 'Buku berhasil dibuat'
-    };
-  }
-
-  // DELETE /books
-  @Delete()
-  deleteBook() {
-    return {
-      message: 'Buku berhasil dihapus'
-    };
-  }
-
-  // PUT /books
-  @Put()
-  updateBook() {
-    return {
-      message: 'Buku berhasil diperbarui'
-    };
-  }
-
-  // PATCH /books
-  @Patch()
-  updatePartialBook() {
-    return {
-      message: 'Buku berhasil diperbarui sebagian'
-    };
+  createBook(@Body() createBookDto: createBookDto) {
+    return this.booksService.create(createBookDto);
   }
 
   // GET /books/:id
   @Get(':id')
   getBookById(@Param('id') id: string) {
     return {
-      data: `Buku dengan ID ${id}`
+      data: `Buku dengan ID ${id}`,
     };
   }
 
@@ -55,7 +40,15 @@ export class BooksController {
   @Put(':id')
   updateBookById(@Param('id') id: string) {
     return {
-      data: `Buku dengan ID ${id} berhasil diperbarui`
+      data: `Buku dengan ID ${id} berhasil diperbarui`,
+    };
+  }
+
+  // PATCH /books/:id
+  @Patch(':id')
+  updatePartialBook(@Param('id') id: string) {
+    return {
+      data: `Buku dengan ID ${id} berhasil diperbarui sebagian`,
     };
   }
 
@@ -63,7 +56,7 @@ export class BooksController {
   @Delete(':id')
   deleteBookById(@Param('id') id: string) {
     return {
-      data: `Buku dengan ID ${id} berhasil dihapus`
+      data: `Buku dengan ID ${id} berhasil dihapus`,
     };
   }
 }
