@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 
 import { BooksService } from './books.service.js';
-import { createBookDto } from './dto/create-book-dto.js';
+import { CreateBookDto } from './dto/create-book-dto.js';
 
 @Controller('books')
 export class BooksController {
@@ -24,7 +24,7 @@ export class BooksController {
 
   // POST /books
   @Post()
-  createBook(@Body() createBookDto: createBookDto) {
+  createBook(@Body() createBookDto: CreateBookDto) {
     return this.booksService.create(createBookDto);
   }
 

@@ -1,38 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { book } from './entities/book-entity.js';
-import { createBookDto } from './dto/create-book-dto.js';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { CreateBookDto } from "./dto/create-book-dto.js";
+import { Book } from "./entities/book-entity.js";
+
 
 @Injectable()
 export class BooksService {
-  private books: book[] = [
+  private books: Book[] = [
     {
       id: 1,
-      title: 'The Great Gatsby',
-      author: 'Penulis 1',
-      isbn: '1234567890',
+      title: "Contoh Buku",
+      author: "Penulis",
+      isbn: "1234567890",
       publishYear: 2020,
-      isAvailable: true,
     },
   ];
 
-  // GET /books
-  findAll(): book[] {
+  findAll(): Book[] {
     return this.books;
   }
 
-  // POST /books
-  create(createBookDto: createBookDto): book {
-    const newBook: book = {
-      id: this.books.length + 1,
+  findOne(id: number): Book {
+    const book = this.books.find((b) => b.id === id);
+    if (!book) {
+      throw new NotFoundException(`Buku dengan id ${id} tidak ditemukan`);
+    }
+    return book;
+  }
+
+  create(createBookDto: CreateBookDto): Book {
+    const newBook: Book = {
+      id: this.books.length ? this.books[this.books.length - 1].id + 1 : 1,
       title: createBookDto.title,
       author: createBookDto.author,
       isbn: createBookDto.isbn,
       publishYear: createBookDto.publishYear,
-      isAvailable: createBookDto.isAvailable,
     };
-
     this.books.push(newBook);
-
     return newBook;
+  }
+
+  remove(id: number): void {
+    const index = this.books.findIndex((b) => b.id === id);
+    if (index === -1) {
+      throw new NotFoundException(`Buku dengan id ${id} tidak ditemukan`);
+    }
+    this.books.splice(index, 1);
   }
 }
