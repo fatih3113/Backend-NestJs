@@ -1,5 +1,5 @@
-import { IsNotEmpty } from "class-validator/types/decorator/common/IsNotEmpty.js";
-import { Min } from "class-validator/types/decorator/number/Min.js";
+import { IsNotEmpty } from "class-validator";
+import { Min } from "class-validator";
 
 export class LoginDto {
   @IsNotEmpty({message: "Email harus di isi"})
