@@ -1,0 +1,19 @@
+services:
+  # konfigurasi untuk container database
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: josjis
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: fatih
+      POSTGRES_USER: postgres
+      POSTGRES_DB: cihuy
+    ports:
+      # port di komputer:port container
+      - '5432:5432'
+    volumes:
+      # menyimpan database ke hdd
+      - postgre_data_volume:/var/lib/postgresql/data
+
+volumes:
+  postgre_data_volume:

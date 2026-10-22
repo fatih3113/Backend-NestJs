@@ -1,49 +1,74 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { CreateBookDto } from "./dto/create-book-dto.js";
-import { Book } from "./entities/book-entity.js";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Book } from './entities/book-entity.js';
+import { CreateBookDto } from './dto/create-book-dto.js';
+import { UpdateBookDto } from './dto/update-book-dto.js';
 
 
 @Injectable()
-export class BooksService {
-  private books: Book[] = [
-    {
-      id: 1,
-      title: "Contoh Buku",
-      author: "Penulis",
-      isbn: "1234567890",
-      publishYear: 2020,
-    },
-  ];
+export class BooksService {  
+  constructor(
+    // Injeksi Repository TypeORM untuk entitas Book
+    @InjectRepository(Book)
+    private readonly bookRepository: Repository<Book>,
+  ) {}
 
-  findAll(): Book[] {
-    return this.books;
+  // 1. CREATE: Membuat buku baru di PostgreSQL
+  async create(dto: CreateBookDto): Promise<Book> {
+    // repository.create() hanya membentuk objek entitas di memori
+    const newBook = this.bookRepository.create(dto);
+    // repository.save() mengeksekusi SQL: INSERT INTO books (...) VALUES (...)
+    return await this.bookRepository.save(newBook);
   }
 
-  findOne(id: number): Book {
-    const book = this.books.find((b) => b.id === id);
+  // 2. READ ALL: Mengambil seluruh buku yang masih aktif
+  async findAll(): Promise<Book[]> {
+    // Mengeksekusi SQL: SELECT * FROM books WHERE deleted_at IS NULL ORDER BY created_at DESC
+    return await this.bookRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // 3. READ ONE: Mencari satu buku berdasarkan UUID
+  async findOne(id: string): Promise<Book> {
+    // Mengeksekusi SQL: SELECT * FROM books WHERE id = $1 AND deleted_at IS NULL
+    const book = await this.bookRepository.findOneBy({ id });
     if (!book) {
-      throw new NotFoundException(`Buku dengan id ${id} tidak ditemukan`);
+      throw new NotFoundException(`Buku dengan ID #${id} tidak ditemukan.`);
     }
     return book;
   }
 
-  create(createBookDto: CreateBookDto): Book {
-    const newBook: Book = {
-      id: this.books.length ? this.books[this.books.length - 1].id + 1 : 1,
-      title: createBookDto.title,
-      author: createBookDto.author,
-      isbn: createBookDto.isbn,
-      publishYear: createBookDto.publishYear,
-    };
-    this.books.push(newBook);
-    return newBook;
+  // 4. UPDATE: Memperbarui data buku
+  async update(id: string, dto: UpdateBookDto): Promise<Book> {
+    // Pastikan buku ada dulu sebelum diupdate
+    const book = await this.findOne(id);
+
+    // Gabungkan perubahan baru ke objek yang sudah ada
+    const updatedBook = this.bookRepository.merge(book, dto);
+
+    // Mengeksekusi SQL: UPDATE books SET ... WHERE id = $1
+    return await this.bookRepository.save(updatedBook);
   }
 
-  remove(id: number): void {
-    const index = this.books.findIndex((b) => b.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Buku dengan id ${id} tidak ditemukan`);
-    }
-    this.books.splice(index, 1);
+  // 5. SOFT DELETE: Menghapus buku secara logis
+  async remove(id: string): Promise<{ message: string; deletedId: string }> {
+    await this.findOne(id); // Validasi keberadaan buku
+
+    // Mengeksekusi SQL: UPDATE books SET deleted_at = NOW() WHERE id = $1
+    await this.bookRepository.softDelete(id);
+
+    return {
+      message: `Buku #${id} berhasil diarsipkan (soft-deleted).`,
+      deletedId: id,
+    };
+  }
+
+  // 6. RESTORE: Memulihkan buku yang pernah di-soft delete
+  async restore(id: string): Promise<{ message: string }> {
+    // Mengeksekusi SQL: UPDATE books SET deleted_at = NULL WHERE id = $1
+    await this.bookRepository.restore(id);
+    return { message: `Buku #${id} berhasil dipulihkan kembali.` };
   }
 }
